@@ -2,8 +2,20 @@ FROM php:8.2-apache
 
 # Installer les dépendances nécessaires
 RUN apt-get update && apt-get install -y \
-    git unzip zip curl libicu-dev libonig-dev libxml2-dev \
-    && docker-php-ext-install intl pdo pdo_mysql opcache
+    libpq-dev \
+    git \
+    curl \
+    libicu-dev \
+    libonig-dev \
+    libxml2-dev \
+    libzip-dev \
+    unzip \
+    && docker-php-ext-install \
+    pdo_mysql \
+    pdo_pgsql \
+    intl \
+    opcache \
+    zip
 
 # Installer Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -12,23 +24,28 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 COPY . /var/www/html
 
 # Installer les dépendances PHP de Symfony
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader
+RUN composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader
 
-# Définir le répertoire de travail
-WORKDIR /var/www/html/public
+# Configurer Apache pour Symfony
+COPY apache/000-default.conf /etc/apache2/sites-available/000-default.conf
+RUN a2enmod rewrite \
+    && a2dissite 000-default.conf \
+    && a2ensite 000-default.conf \
+    && echo '<Directory /var/www/html/public>\n\
+        AllowOverride All\n\
+        Require all granted\n\
+    </Directory>' > /etc/apache2/conf-available/symfony.conf \
+    && a2enconf symfony
 
-# Donner les permissions
-RUN chown -R www-data:www-data /var/www/html
+# Définir les permissions
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 775 /var/www/html/var
 
-# Activer mod_rewrite d’Apache (utile pour Symfony)
-RUN a2enmod rewrite
+# Définir le répertoire de travail (optionnel, car Apache gère cela)
+WORKDIR /var/www/html
 
-# Ajouter une config Apache pour Symfony
-RUN echo '<Directory /var/www/html/public>\n\
-    AllowOverride All\n\
-</Directory>' > /etc/apache2/conf-available/symfony.conf && \
-    a2enconf symfony
-
+# Exposer le port 80 (requis par Render)
 EXPOSE 80
 
+# Commande de démarrage
 CMD ["apache2-foreground"]
