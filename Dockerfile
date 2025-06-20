@@ -17,6 +17,10 @@ RUN apt-get update && apt-get install -y \
     opcache \
     zip
 
+# Installer le Symfony CLI
+RUN curl -sS https://get.symfony.com/cli/installer | bash \
+    && mv /root/.symfony5/bin/symfony /usr/local/bin/symfony
+
 # Installer Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
