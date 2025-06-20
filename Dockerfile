@@ -11,8 +11,10 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Copier les fichiers du projet
 COPY . /var/www/html
 
+
 # Définir le répertoire de travail
-WORKDIR /var/www/html
+WORKDIR /var/www/html/public
+
 
 # Donner les permissions
 RUN chown -R www-data:www-data /var/www/html
