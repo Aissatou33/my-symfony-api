@@ -11,10 +11,8 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Copier les fichiers du projet
 COPY . /var/www/html
 
-
 # Définir le répertoire de travail
 WORKDIR /var/www/html/public
-
 
 # Donner les permissions
 RUN chown -R www-data:www-data /var/www/html
@@ -27,6 +25,10 @@ RUN echo '<Directory /var/www/html/public>\n\
     AllowOverride All\n\
 </Directory>' > /etc/apache2/conf-available/symfony.conf && \
     a2enconf symfony
+
+# 🆕 Rediriger Apache vers /public
+ENV APACHE_DOCUMENT_ROOT /var/www/html/public
+RUN sed -ri -e 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf
 
 EXPOSE 80
 
