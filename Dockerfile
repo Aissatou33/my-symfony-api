@@ -27,8 +27,8 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Copier les fichiers du projet
 COPY . /var/www/html
 
-# Installer les dépendances PHP de Symfony
-RUN composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader
+# Installer les dépendances PHP de Symfony en tant que root, puis changer d'utilisateur
+RUN composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader --no-scripts
 
 # Configurer Apache pour Symfony
 COPY apache/000-default.conf /etc/apache2/sites-available/000-default.conf
@@ -41,9 +41,10 @@ RUN a2enmod rewrite \
     </Directory>' > /etc/apache2/conf-available/symfony.conf \
     && a2enconf symfony
 
-# Définir les permissions
+# Définir les permissions et changer l'utilisateur
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 775 /var/www/html/var
+USER www-data
 
 # Définir le répertoire de travail (optionnel, car Apache gère cela)
 WORKDIR /var/www/html
